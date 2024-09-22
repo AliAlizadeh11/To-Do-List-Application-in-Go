@@ -14,7 +14,24 @@ type User struct {
 	Password string
 }
 
+type Task struct {
+	ID       int
+	Title    string
+	DueDate  string
+	Category string
+	IsDone   bool
+	UserId   int
+}
+
+func (u User) print() {
+	fmt.Println("User:", u.ID, u.Email, u.Name)
+
+}
+
 var userStorage []User
+var authenticatedUser *User
+
+var taskStorage []Task
 
 func main() {
 	fmt.Println("welcome to ToDo app ")
@@ -23,6 +40,7 @@ func main() {
 	flag.Parse()
 
 	for {
+
 		runcommand(*command)
 
 		scanner := bufio.NewScanner(os.Stdin)
@@ -31,22 +49,37 @@ func main() {
 		*command = scanner.Text()
 	}
 
-	fmt.Printf("userstorage: %+v\n@", userStorage)
 }
 
 func runcommand(command string) {
+	if command != "register-user" && command != "exit" && authenticatedUser == nil {
+		login()
+
+		if authenticatedUser == nil {
+			return
+		}
+	}
+
 	switch command {
 
 	case "create-task":
 		createTask()
+
 	case "create-category":
 		createCategory()
+
 	case "register-user":
 		registerUser()
+
 	case "login":
 		login()
+
+	case "list-task":
+		listTask()
+
 	case "exit":
 		os.Exit(0)
+
 	default:
 		fmt.Println("command is not valid", command)
 
@@ -55,13 +88,14 @@ func runcommand(command string) {
 }
 
 func createTask() {
+
 	scanner := bufio.NewScanner(os.Stdin)
 
-	var name, duedate, category string
+	var title, duedate, category string
 
 	fmt.Println("please enter the task title")
 	scanner.Scan()
-	name = scanner.Text()
+	title = scanner.Text()
 
 	fmt.Println("please enter the task duedate")
 	scanner.Scan()
@@ -71,7 +105,16 @@ func createTask() {
 	scanner.Scan()
 	category = scanner.Text()
 
-	fmt.Println("task:", name, duedate, category)
+	task := Task{
+		ID:       len(taskStorage) + 1,
+		Title:    title,
+		DueDate:  duedate,
+		Category: category,
+		IsDone:   false,
+		UserId:   authenticatedUser.ID,
+	}
+
+	taskStorage = append(taskStorage, task)
 }
 
 func createCategory() {
@@ -122,17 +165,37 @@ func registerUser() {
 }
 
 func login() {
+	fmt.Println("login process")
 	scanner := bufio.NewScanner(os.Stdin)
 	var email, password string
 
-	fmt.Println("please enter the user email")
+	fmt.Println("please enter the email")
 	scanner.Scan()
 	email = scanner.Text()
 
-	fmt.Println("please enter the user password")
+	fmt.Println("please enter the password")
 	scanner.Scan()
 	password = scanner.Text()
 
-	fmt.Println("user:", email, password)
+	for _, user := range userStorage {
+		if user.Email == email && user.Password == password {
+			authenticatedUser = &user
 
+			break
+		}
+	}
+
+	if authenticatedUser == nil {
+		fmt.Println("the email or password is incorrect")
+
+	}
+
+}
+
+func listTask() {
+	for _, task := range taskStorage {
+		if task.UserId == authenticatedUser.ID {
+			fmt.Println(task)
+		}
+	}
 }
