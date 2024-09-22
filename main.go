@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type User struct {
@@ -15,23 +16,26 @@ type User struct {
 }
 
 type Task struct {
-	ID       int
-	Title    string
-	DueDate  string
-	Category string
-	IsDone   bool
-	UserId   int
+	ID         int
+	Title      string
+	DueDate    string
+	CategoryID int
+	IsDone     bool
+	UserId     int
 }
 
-func (u User) print() {
-	fmt.Println("User:", u.ID, u.Email, u.Name)
-
+type Category struct {
+	ID     int
+	Title  string
+	Color  string
+	UserID int
 }
 
 var userStorage []User
 var authenticatedUser *User
 
 var taskStorage []Task
+var categoryStorage []Category
 
 func main() {
 	fmt.Println("welcome to ToDo app ")
@@ -101,17 +105,39 @@ func createTask() {
 	scanner.Scan()
 	duedate = scanner.Text()
 
-	fmt.Println("please enter the task category")
+	fmt.Println("please enter the task category id")
 	scanner.Scan()
 	category = scanner.Text()
 
+	categoryID, err := strconv.Atoi(category)
+	if err != nil {
+		fmt.Println("category id is not valid")
+
+		return
+	}
+
+	isFound := false
+	for _, c := range categoryStorage {
+		if c.ID == categoryID && c.UserID == authenticatedUser.ID {
+			isFound = true
+
+			break
+		}
+	}
+
+	if !isFound {
+		fmt.Println("category id is not a valid integer, %v\n", err)
+
+		return
+	}
+
 	task := Task{
-		ID:       len(taskStorage) + 1,
-		Title:    title,
-		DueDate:  duedate,
-		Category: category,
-		IsDone:   false,
-		UserId:   authenticatedUser.ID,
+		ID:         len(taskStorage) + 1,
+		Title:      title,
+		DueDate:    duedate,
+		CategoryID: categoryID,
+		IsDone:     false,
+		UserId:     authenticatedUser.ID,
 	}
 
 	taskStorage = append(taskStorage, task)
@@ -130,6 +156,15 @@ func createCategory() {
 	color = scanner.Text()
 
 	fmt.Println("category:", title, color)
+
+	category := Category{
+		ID:     len(categoryStorage) + 1,
+		Title:  title,
+		Color:  color,
+		UserID: authenticatedUser.ID,
+	}
+
+	categoryStorage = append(categoryStorage, category)
 
 }
 
